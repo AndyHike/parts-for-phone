@@ -1,0 +1,7 @@
+{
+  "name": "ServicePart Pro",
+  "description": "Професійна система обліку запчастин для сервісних центрів з підтримкою AI для швидкого додавання.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}

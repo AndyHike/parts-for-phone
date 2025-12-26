@@ -5,12 +5,13 @@ import { Sparkles, Loader2, Save, X } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 
 interface Props {
-  onSave: (part: Part) => void;
+  onSave: (part: Part) => Promise<void>; // Updated to return Promise
   onCancel: () => void;
   initialData?: Part | null;
+  isSaving: boolean; // New prop
 }
 
-export const AddPartForm: React.FC<Props> = ({ onSave, onCancel, initialData }) => {
+export const AddPartForm: React.FC<Props> = ({ onSave, onCancel, initialData, isSaving }) => {
   const [isAiLoading, setIsAiLoading] = useState(false);
   const [aiPrompt, setAiPrompt] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
@@ -62,20 +63,20 @@ export const AddPartForm: React.FC<Props> = ({ onSave, onCancel, initialData }) 
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const partToSave: Part = {
-      // Use existing ID if editing, otherwise new ID
+      // Use existing ID if editing, otherwise new ID (backend might ignore ID on create depending on implementation)
       id: initialData?.id || uuidv4(),
       // Keep existing date or new date
       dateAdded: initialData?.dateAdded || new Date().toISOString(),
       compatibility: modelsInput.split(',').map(s => s.trim()).filter(Boolean),
       ...formData as any
     };
-    onSave(partToSave);
+    await onSave(partToSave);
   };
 
-  const inputClass = "w-full bg-white text-gray-900 border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none placeholder-gray-400";
+  const inputClass = "w-full bg-white text-gray-900 border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none placeholder-gray-400 disabled:opacity-50 disabled:bg-gray-100";
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 overflow-y-auto">
@@ -91,7 +92,7 @@ export const AddPartForm: React.FC<Props> = ({ onSave, onCancel, initialData }) 
               {initialData ? 'Внесіть зміни у поля нижче' : 'Заповніть форму вручну або використайте AI'}
             </p>
           </div>
-          <button onClick={onCancel} className="p-2 hover:bg-gray-200 rounded-full transition-colors">
+          <button onClick={onCancel} disabled={isSaving} className="p-2 hover:bg-gray-200 rounded-full transition-colors disabled:opacity-50">
             <X className="w-6 h-6 text-gray-500" />
           </button>
         </div>
@@ -113,10 +114,11 @@ export const AddPartForm: React.FC<Props> = ({ onSave, onCancel, initialData }) 
                   placeholder="Наприклад: Дисплей iPhone 11 оригінал знятий з донора, невелика подряпина"
                   className={`${inputClass} border-blue-200 focus:ring-blue-500`}
                   onKeyDown={(e) => e.key === 'Enter' && handleAiGenerate()}
+                  disabled={isSaving}
                 />
                 <button
                   onClick={handleAiGenerate}
-                  disabled={isAiLoading || !aiPrompt}
+                  disabled={isAiLoading || !aiPrompt || isSaving}
                   className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-all shrink-0"
                 >
                   {isAiLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Заповнити'}
@@ -128,6 +130,7 @@ export const AddPartForm: React.FC<Props> = ({ onSave, onCancel, initialData }) 
           )}
 
           <form id="add-part-form" onSubmit={handleSubmit} className="space-y-6">
+            <fieldset disabled={isSaving} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               
               {/* Left Column */}
@@ -263,7 +266,7 @@ export const AddPartForm: React.FC<Props> = ({ onSave, onCancel, initialData }) 
                 placeholder="Додаткова інформація про стан..."
               />
             </div>
-
+            </fieldset>
           </form>
         </div>
 
@@ -272,17 +275,19 @@ export const AddPartForm: React.FC<Props> = ({ onSave, onCancel, initialData }) 
           <button
             type="button"
             onClick={onCancel}
-            className="px-5 py-2.5 rounded-lg text-gray-700 font-medium hover:bg-gray-200 transition-colors"
+            disabled={isSaving}
+            className="px-5 py-2.5 rounded-lg text-gray-700 font-medium hover:bg-gray-200 transition-colors disabled:opacity-50"
           >
             Скасувати
           </button>
           <button
             type="submit"
             form="add-part-form"
-            className="px-5 py-2.5 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700 shadow-md hover:shadow-lg transition-all flex items-center gap-2"
+            disabled={isSaving}
+            className="px-5 py-2.5 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700 shadow-md hover:shadow-lg transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <Save className="w-4 h-4" />
-            Зберегти
+            {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+            {isSaving ? 'Збереження...' : 'Зберегти'}
           </button>
         </div>
       </div>

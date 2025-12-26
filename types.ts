@@ -1,3 +1,4 @@
+
 export enum PartCondition {
   NEW = 'NEW',
   USED_EXCELLENT = 'USED_EXCELLENT', // Б/У ідеал (знятий з нового)
@@ -36,4 +37,45 @@ export interface DashboardStats {
   totalValueBuy: number;
   totalValueSell: number;
   lowStockCount: number;
+}
+
+// --- Repair Types ---
+
+export enum RepairStatus {
+  RECEIVED = 'RECEIVED',       // Прийнято
+  DIAGNOSTICS = 'DIAGNOSTICS', // Діагностика
+  IN_PROGRESS = 'IN_PROGRESS', // В роботі
+  WAITING_PARTS = 'WAITING_PARTS', // Очікує запчастини
+  READY = 'READY',             // Готово до видачі
+  COMPLETED = 'COMPLETED',     // Видано/Оплачено
+  CANCELLED = 'CANCELLED'      // Відмова
+}
+
+export interface RepairServiceItem {
+  name: string;
+  price: number;
+  cost: number; // Собівартість (наприклад, зарплата майстра або ціна деталі)
+}
+
+export interface RepairOrder {
+  id: string;
+  // Client Info
+  clientName: string;
+  clientPhone: string;
+  
+  // Device Info
+  deviceBrand: string;
+  deviceModel: string;
+  deviceSnImei: string; // Serial / IMEI
+  deviceCondition: string; // Scratches, cracks visible on intake
+  problemDescription: string; // Customer complaint
+  
+  // Repair Info
+  status: RepairStatus;
+  services: RepairServiceItem[];
+  notes?: string; // Internal notes
+  
+  dateReceived: string;
+  dateCompleted?: string;
+  totalPrice: number;
 }

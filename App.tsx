@@ -178,7 +178,7 @@ const App: React.FC = () => {
         
       </main>
 
-      {/* Modals */}
+      {/* Modal*/}
       {isAddPartModalOpen && (
         <AddPartForm 
           onSave={handleSavePart} 
@@ -197,6 +197,6 @@ const App: React.FC = () => {
       )}
     </div>
   );
-};
+}; 
 
 export default App;

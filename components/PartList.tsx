@@ -1,14 +1,16 @@
 import React, { useState } from 'react';
 import { Part, PartCondition, Category } from '../types';
-import { Search, Filter, Smartphone, MapPin, Tag, Trash2, Edit } from 'lucide-react';
+import { Search, Filter, Smartphone, MapPin, Tag, Trash2, Edit, Wand2 } from 'lucide-react';
 
 interface Props {
   parts: Part[];
   onDelete: (id: string) => void;
   onEdit: (part: Part) => void;
+  onNormalize: () => void; // New prop
+  isNormalizing?: boolean; // New prop for loading state
 }
 
-export const PartList: React.FC<Props> = ({ parts, onDelete, onEdit }) => {
+export const PartList: React.FC<Props> = ({ parts, onDelete, onEdit, onNormalize, isNormalizing }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<string>('ALL');
 
@@ -52,7 +54,25 @@ export const PartList: React.FC<Props> = ({ parts, onDelete, onEdit }) => {
             className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none text-sm bg-white text-gray-900 placeholder-gray-400"
           />
         </div>
+        
         <div className="flex items-center gap-2 w-full md:w-auto overflow-x-auto">
+          {/* Magic Wand Button */}
+          <button
+            onClick={onNormalize}
+            disabled={isNormalizing || parts.length === 0}
+            className={`p-2 rounded-lg border flex items-center gap-2 text-sm font-medium transition-all ${
+              isNormalizing 
+                ? 'bg-purple-100 border-purple-200 text-purple-700 animate-pulse cursor-not-allowed' 
+                : 'bg-white border-purple-200 text-purple-600 hover:bg-purple-50 hover:border-purple-300 shadow-sm'
+            }`}
+            title="Привести назви до стандарту (AI)"
+          >
+            <Wand2 className={`w-4 h-4 ${isNormalizing ? 'animate-spin' : ''}`} />
+            <span className="hidden md:inline">{isNormalizing ? 'Виправлення...' : 'Нормалізація'}</span>
+          </button>
+
+          <div className="h-6 w-px bg-gray-300 mx-1"></div>
+
           <Filter className="w-4 h-4 text-gray-500" />
           <select 
             value={categoryFilter}

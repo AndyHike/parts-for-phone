@@ -1,7 +1,7 @@
 import { GoogleGenAI, Type, Schema } from "@google/genai";
-import { PartCondition, Category } from "../types";
+import { PartCondition, Category, Part } from "../types";
 
-const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY});
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 // Define the single item schema structure first
 const singlePartSchemaProperties = {
@@ -32,6 +32,19 @@ const multiPartSchema: Schema = {
     type: Type.OBJECT,
     properties: singlePartSchemaProperties,
     required: ["name", "category", "condition"],
+  }
+};
+
+const normalizationSchema: Schema = {
+  type: Type.ARRAY,
+  items: {
+    type: Type.OBJECT,
+    properties: {
+      id: { type: Type.STRING, description: "The ID of the part being updated" },
+      name: { type: Type.STRING, description: "The standardized name" },
+      category: { type: Type.STRING, description: "Corrected category", enum: Object.values(Category) }
+    },
+    required: ["id", "name", "category"]
   }
 };
 
@@ -80,6 +93,38 @@ export const parseMultiplePartsDescription = async (text: string) => {
     return JSON.parse(response.text);
   } catch (error) {
     console.error("Gemini batch parsing error:", error);
+    return [];
+  }
+};
+
+export const normalizePartsData = async (parts: Part[]) => {
+  try {
+    // Send a simplified list to save tokens
+    const simplifiedList = parts.map(p => ({ id: p.id, name: p.name, category: p.category }));
+    
+    const response = await ai.models.generateContent({
+      model: "gemini-3-flash-preview",
+      contents: `Standardize and fix the names and categories in this list of mobile phone parts. 
+      Rules:
+      1. Use consistent terminology (e.g., use 'Батарея' instead of 'Акум' or 'Battery', use 'Дисплей' instead of 'Екран' if it implies the whole module).
+      2. Fix typos in brands and models (e.g., 'Ipone' -> 'iPhone').
+      3. Ensure correct capitalization.
+      4. Ensure the Category matches the name.
+      
+      Input JSON: ${JSON.stringify(simplifiedList)}`,
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: normalizationSchema,
+      },
+    });
+
+    if (!response.text) {
+        throw new Error("No response text from Gemini");
+    }
+
+    return JSON.parse(response.text);
+  } catch (error) {
+    console.error("Gemini normalization error:", error);
     return [];
   }
 };

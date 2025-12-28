@@ -49,10 +49,11 @@ export const AddPartForm: React.FC<Props> = ({ onSave, onCancel, initialData, is
       setFormData(prev => ({
         ...prev,
         ...result,
-        // Preserve numbers if already set, or default
-        quantity: prev.quantity || 1,
-        priceBuy: prev.priceBuy || 0,
-        priceSell: prev.priceSell || 0,
+        // IMPORTANT: We use the AI result quantity if available, otherwise fall back to previous state.
+        // Previously there was a bug where 'prev.quantity || 1' overwrote the AI result.
+        quantity: result.quantity !== undefined ? result.quantity : (prev.quantity || 1),
+        priceBuy: result.priceBuy !== undefined ? result.priceBuy : (prev.priceBuy || 0),
+        priceSell: result.priceSell !== undefined ? result.priceSell : (prev.priceSell || 0),
         description: result.description || aiPrompt
       }));
       if (result.compatibility) {

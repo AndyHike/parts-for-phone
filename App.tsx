@@ -9,6 +9,7 @@ import { BulkImportModal } from './components/BulkImportModal';
 import { Part, RepairOrder, RepairStatus } from './types';
 import { Plus, Loader2, AlertCircle, Sparkles } from 'lucide-react';
 import { api } from './services/api';
+import { normalizePartsData } from './services/geminiService';
 
 const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'inventory' | 'repairs'>('inventory');
@@ -18,6 +19,7 @@ const App: React.FC = () => {
   const [isAddPartModalOpen, setIsAddPartModalOpen] = useState(false);
   const [isBulkImportModalOpen, setIsBulkImportModalOpen] = useState(false);
   const [editingPart, setEditingPart] = useState<Part | null>(null);
+  const [isNormalizing, setIsNormalizing] = useState(false); // New state
   
   // Repairs State
   const [repairs, setRepairs] = useState<RepairOrder[]>([]);
@@ -88,6 +90,52 @@ const App: React.FC = () => {
           console.error("Bulk save error", err);
           alert('Помилка при масовому збереженні.');
       }
+  };
+
+  const handleNormalizeParts = async () => {
+    if (parts.length === 0) return;
+    if (!window.confirm("AI проаналізує всі назви та категорії товарів і виправить помилки. Це може зайняти час. Продовжити?")) return;
+
+    setIsNormalizing(true);
+    try {
+      // 1. Get corrections from AI
+      const corrections = await normalizePartsData(parts);
+      
+      if (!corrections || corrections.length === 0) {
+        alert("AI не знайшов, що виправляти, або виникла помилка.");
+        return;
+      }
+
+      // 2. Apply updates one by one (or batch if API supported)
+      let updatedCount = 0;
+      for (const correction of corrections) {
+        const originalPart = parts.find(p => p.id === correction.id);
+        
+        // Update only if changed
+        if (originalPart && (originalPart.name !== correction.name || originalPart.category !== correction.category)) {
+          const updatedPart = { ...originalPart, name: correction.name, category: correction.category };
+          
+          // Call API
+          await api.updatePart(updatedPart);
+          
+          // Update State locally to reflect changes immediately in UI
+          setParts(prev => prev.map(p => p.id === updatedPart.id ? updatedPart : p));
+          updatedCount++;
+        }
+      }
+
+      if (updatedCount > 0) {
+        alert(`Успішно оновлено ${updatedCount} товарів!`);
+      } else {
+        alert("Всі товари вже мають правильні назви.");
+      }
+
+    } catch (err) {
+      console.error(err);
+      alert("Помилка при нормалізації даних.");
+    } finally {
+      setIsNormalizing(false);
+    }
   };
 
   const handleDeletePart = async (id: string) => {
@@ -197,6 +245,8 @@ const App: React.FC = () => {
                         parts={parts} 
                         onDelete={handleDeletePart} 
                         onEdit={(part) => { setEditingPart(part); setIsAddPartModalOpen(true); }}
+                        onNormalize={handleNormalizeParts}
+                        isNormalizing={isNormalizing}
                     />
                 </>
             ) : (

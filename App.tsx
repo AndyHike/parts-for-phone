@@ -153,19 +153,21 @@ const App: React.FC = () => {
   };
 
   // --- Repairs Handlers ---
-  const handleCreateRepair = async (order: RepairOrder) => {
-    setIsSaving(true);
-    try {
-        const newOrder = await api.createRepair(order);
-        setRepairs(prev => [newOrder, ...prev]);
-        setIsAddRepairModalOpen(false);
-    } catch (err) {
-        console.error(err);
-        alert('Помилка при створенні замовлення.');
-    } finally {
-        setIsSaving(false);
-    }
-  };
+const handleCreateRepair = async (order: RepairOrder) => {
+  setIsSaving(true);
+  try {
+      const result = await api.createRepair(order);
+      // Створюємо повний об'єкт замовлення, поєднуючи дані з форми та ID від сервера
+      const savedOrder = { ...order, id: result.id || order.id }; 
+      setRepairs(prev => [savedOrder, ...prev]);
+      setIsAddRepairModalOpen(false);
+  } catch (err) {
+      console.error(err);
+      alert('Помилка при створенні замовлення.');
+  } finally {
+      setIsSaving(false);
+  }
+};
 
   const handleRepairStatusChange = async (id: string, newStatus: RepairStatus) => {
       // Optimistic Update

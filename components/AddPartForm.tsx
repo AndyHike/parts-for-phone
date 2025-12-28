@@ -5,10 +5,10 @@ import { Sparkles, Loader2, Save, X } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 
 interface Props {
-  onSave: (part: Part) => Promise<void>; // Updated to return Promise
+  onSave: (part: Part) => Promise<void>;
   onCancel: () => void;
   initialData?: Part | null;
-  isSaving: boolean; // New prop
+  isSaving: boolean;
 }
 
 export const AddPartForm: React.FC<Props> = ({ onSave, onCancel, initialData, isSaving }) => {
@@ -49,8 +49,6 @@ export const AddPartForm: React.FC<Props> = ({ onSave, onCancel, initialData, is
       setFormData(prev => ({
         ...prev,
         ...result,
-        // IMPORTANT: We use the AI result quantity if available, otherwise fall back to previous state.
-        // Previously there was a bug where 'prev.quantity || 1' overwrote the AI result.
         quantity: result.quantity !== undefined ? result.quantity : (prev.quantity || 1),
         priceBuy: result.priceBuy !== undefined ? result.priceBuy : (prev.priceBuy || 0),
         priceSell: result.priceSell !== undefined ? result.priceSell : (prev.priceSell || 0),
@@ -67,9 +65,7 @@ export const AddPartForm: React.FC<Props> = ({ onSave, onCancel, initialData, is
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const partToSave: Part = {
-      // Use existing ID if editing, otherwise new ID (backend might ignore ID on create depending on implementation)
       id: initialData?.id || uuidv4(),
-      // Keep existing date or new date
       dateAdded: initialData?.dateAdded || new Date().toISOString(),
       compatibility: modelsInput.split(',').map(s => s.trim()).filter(Boolean),
       ...formData as any
@@ -100,7 +96,6 @@ export const AddPartForm: React.FC<Props> = ({ onSave, onCancel, initialData, is
 
         <div className="p-6 overflow-y-auto custom-scrollbar">
           
-          {/* AI Section - only show if creating new or explicitly wanting to use AI */}
           {!initialData && (
             <div className="mb-8 bg-blue-50 p-4 rounded-xl border border-blue-100">
               <label className="block text-sm font-medium text-blue-900 mb-2 flex items-center gap-2">
@@ -134,7 +129,6 @@ export const AddPartForm: React.FC<Props> = ({ onSave, onCancel, initialData, is
             <fieldset disabled={isSaving} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               
-              {/* Left Column */}
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Назва деталі</label>
@@ -167,7 +161,10 @@ export const AddPartForm: React.FC<Props> = ({ onSave, onCancel, initialData, is
                       type="number"
                       min="0"
                       value={formData.quantity}
-                      onChange={(e) => setFormData({...formData, quantity: parseInt(e.target.value)})}
+                      onChange={(e) => {
+                        const val = e.target.value === '' ? 0 : parseInt(e.target.value);
+                        setFormData({...formData, quantity: isNaN(val) ? 0 : val});
+                      }}
                       className={inputClass}
                     />
                   </div>
@@ -190,7 +187,10 @@ export const AddPartForm: React.FC<Props> = ({ onSave, onCancel, initialData, is
                     <input
                       type="number"
                       value={formData.priceBuy}
-                      onChange={(e) => setFormData({...formData, priceBuy: parseFloat(e.target.value)})}
+                      onChange={(e) => {
+                        const val = e.target.value === '' ? 0 : parseFloat(e.target.value);
+                        setFormData({...formData, priceBuy: isNaN(val) ? 0 : val});
+                      }}
                       className={inputClass}
                     />
                   </div>
@@ -199,14 +199,16 @@ export const AddPartForm: React.FC<Props> = ({ onSave, onCancel, initialData, is
                     <input
                       type="number"
                       value={formData.priceSell}
-                      onChange={(e) => setFormData({...formData, priceSell: parseFloat(e.target.value)})}
+                      onChange={(e) => {
+                        const val = e.target.value === '' ? 0 : parseFloat(e.target.value);
+                        setFormData({...formData, priceSell: isNaN(val) ? 0 : val});
+                      }}
                       className={inputClass}
                     />
                   </div>
                 </div>
               </div>
 
-              {/* Right Column */}
               <div className="space-y-4">
                  <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
                     <label className="block text-sm font-medium text-gray-700 mb-2">Стан деталі</label>
@@ -271,7 +273,6 @@ export const AddPartForm: React.FC<Props> = ({ onSave, onCancel, initialData, is
           </form>
         </div>
 
-        {/* Footer */}
         <div className="p-6 border-t border-gray-100 bg-gray-50 rounded-b-2xl flex justify-end gap-3">
           <button
             type="button"

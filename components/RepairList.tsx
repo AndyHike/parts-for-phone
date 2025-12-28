@@ -106,11 +106,12 @@ export const RepairList: React.FC<Props> = ({ repairs, onStatusChange }) => {
                     </td>
                     <td className="px-6 py-4 max-w-xs">
                         <div className="text-sm text-red-600 mb-1">{order.problemDescription}</div>
-                        <div className="text-xs text-gray-500">
-                            {order.services.length > 0 
-                                ? order.services.map(s => s.name).join(', ') 
-                                : 'Послуги не додано'}
-                        </div>
+                       <div className="text-xs text-gray-500">
+    {/* Додаємо перевірку order.services && ... */}
+    {order.services && order.services.length > 0 
+        ? order.services.map(s => s.name).join(', ') 
+        : 'Послуги не додано'}
+</div>
                     </td>
                     <td className="px-6 py-4 text-center">
                          <div className="relative group inline-block">

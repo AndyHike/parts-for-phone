@@ -8,9 +8,11 @@ interface Props {
 }
 
 export const DashboardStats: React.FC<Props> = ({ parts }) => {
-  const totalItems = parts.reduce((acc, p) => acc + p.quantity, 0);
-  const totalValueBuy = parts.reduce((acc, p) => acc + (p.priceBuy * p.quantity), 0);
-  const totalValueSell = parts.reduce((acc, p) => acc + (p.priceSell * p.quantity), 0);
+  // Виправлені розрахунки з захистом від некоректних даних (NaN)
+  const totalItems = parts.reduce((acc, p) => acc + (Number(p.quantity) || 0), 0);
+  const totalValueBuy = parts.reduce((acc, p) => acc + (Number(p.priceBuy || 0) * Number(p.quantity || 0)), 0);
+  const totalValueSell = parts.reduce((acc, p) => acc + (Number(p.priceSell || 0) * Number(p.quantity || 0)), 0);
+  
   const usedCount = parts.filter(p => p.condition !== PartCondition.NEW).length;
 
   const conditionData = [
